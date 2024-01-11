@@ -11,12 +11,5 @@ const instance = axios.create({
 const getAxiosData = (res) => res.data;
 
 export const getImages = async (params) => {
-    try {
-        const resp = await instance.get('', { params: params });
-        return getAxiosData(resp);
-    }
-    catch(error) {
-        showError('Error! No connection with server!');
-    }
- 
+        return getAxiosData(await instance.get('', { params: params }));
 }

@@ -1,16 +1,12 @@
-import iziToast from "izitoast";
-import "izitoast/dist/css/iziToast.min.css";
 import SimpleLightbox from "simplelightbox";
 import "simplelightbox/dist/simple-lightbox.min.css";
-import iconUrl from './img/bi_x-octagon.svg';
 import { getImages } from './js/server';
-
+import { showError } from './js/message';
 
 const searchBtn = document.querySelector('.search-button');
 const form = document.querySelector('.search-form');
 const input = document.querySelector('.search-input');
 const loader = document.querySelector('.loader-div');
-
 
 
 const myParams = {
@@ -23,17 +19,16 @@ const myParams = {
 
 const handleResponse = async () => {
   try {
-    const response = getImages(myParams);
+    const response = await getImages(myParams);
     if (response.total === 0) {
       showError('Sorry, there are no images matching your search query. Please try again!');
-      hideLoader();
-      return;
+      return [];
     }
-    fillGallery(response.hits);
+    return response.hits;
   }
-  catch(error){
+  catch (error) {
     showError('Error! No connection with server!');
-    hideLoader();
+    return [];
   }
 }
 
@@ -41,7 +36,9 @@ const handleSearch = async () => {
   myParams.q = input.value.trim().split(' ').join('+');
   clearGallery();
   showLoader();
-  await handleResponse();
+  const resp = await handleResponse();
+  hideLoader();
+  fillGallery(resp);
   clearSearch();
 }
 
@@ -51,16 +48,6 @@ form.addEventListener('submit', (event) => {
 })
 
 
-const showError = (text) => {
-    iziToast.error({
-      message:text,
-      position: 'topRight',
-      backgroundColor: 'red',
-      messageColor:'white',
-      iconUrl: `${iconUrl}`,
-      iconColor: 'white',
-    })
-}
 const clearGallery = () => {
   const galleryList = document.querySelector('.gallery-list');
   galleryList.innerHTML = '';
@@ -73,7 +60,7 @@ const clearSearch = () => {
 const fillGallery = (itemsList) => {
   const galleryList = document.querySelector('.gallery-list');
   clearGallery();
-    let content = '';
+  let content = '';
 
   content = itemsList.reduce((content, item) => {
     return content +
@@ -104,10 +91,8 @@ const fillGallery = (itemsList) => {
   }, '');
 
   galleryList.innerHTML = content;
-  hideLoader();
   gallery.refresh();
 }
-
 
 const hideLoader = () => {
   loader.style.display = 'none';
@@ -116,7 +101,6 @@ const hideLoader = () => {
 const showLoader = () => {
    loader.style.display = 'flex';
 }
-
 
 let gallery = new SimpleLightbox('.gallery a', {
   overlayOpacity: 0.1,
