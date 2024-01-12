@@ -21,6 +21,12 @@ const handleSearch = async () => {
 
   hideLoadBtn();
   clearGallery();
+  const s = getSearch();
+  if (!s) {
+    showMessage('Input your request!');
+    return;
+  };
+  // console.log(s);
   const imagesRequest = createImagesRequest(getSearch());
 
   doFetch = async () => {
@@ -97,7 +103,7 @@ const createImagesRequest = (q) => {
     try {
       if (isLastPage) return [];
       const { hits, total } = await getImages({ q, page, per_page });
-      
+
       if (total === 0) {
         hideLoadBtn();
         showError('Sorry, there are no images matching your search query. Please try again!');
