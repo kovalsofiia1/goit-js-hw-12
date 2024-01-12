@@ -2,6 +2,7 @@ body {
   background-color: rgb(209, 241, 163);
   margin: 0;
   min-height: 100vh;
+  padding-bottom: 30px;
 }
 .search-form {
   padding-top: 20px;
@@ -21,7 +22,7 @@ body {
 .search-input:active {
   border: 1px solid #49b119;
 }
-.search-button {
+.btn {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -30,6 +31,13 @@ body {
   color: #243311;
   background-color: #5dc52d;
 }
-.search-button:hover {
+.btn:hover {
   background-color: #49b119;
+}
+
+.load-button {
+  margin-left: auto;
+  margin-right: auto;
+  padding: 8px 16px;
+  display: none;
 }

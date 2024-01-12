@@ -12,3 +12,13 @@ export const showError = (text) => {
       iconColor: 'white',
     })
 }
+
+export const showMessage = (text) => {
+    iziToast.error({
+      message:text,
+      position: 'topRight',
+      backgroundColor: 'green',
+      messageColor:'white',
+      iconColor: 'white',
+    })
+}

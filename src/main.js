@@ -1,45 +1,47 @@
 import SimpleLightbox from "simplelightbox";
 import "simplelightbox/dist/simple-lightbox.min.css";
 import { getImages } from './js/server';
-import { showError } from './js/message';
+import { showError, showMessage } from './js/message';
 
 const searchBtn = document.querySelector('.search-button');
 const form = document.querySelector('.search-form');
 const input = document.querySelector('.search-input');
 const loader = document.querySelector('.loader-div');
+const loadBtn = document.querySelector('.load-button');
 
 
-const myParams = {
-    key: '41582613-5fd86df2fe5af6dc3c1a0bcd8',
-    type: 'photo',
-    orientation: 'horizontal',
-    safesearch: 'true',
-}
 
-
-const handleResponse = async () => {
-  try {
-    const response = await getImages(myParams);
-    if (response.total === 0) {
-      showError('Sorry, there are no images matching your search query. Please try again!');
-      return [];
-    }
-    return response.hits;
-  }
-  catch (error) {
-    showError('Error! No connection with server!');
-    return [];
-  }
-}
+let doFetch = null;
 
 const handleSearch = async () => {
-  myParams.q = input.value.trim().split(' ').join('+');
+  if (doFetch !== null) {
+    loadBtn.removeEventListener('click', doFetch);
+    doFetch = null;
+  }
+
+  hideLoadBtn();
   clearGallery();
-  showLoader();
-  const resp = await handleResponse();
-  hideLoader();
-  fillGallery(resp);
+  const imagesRequest = createImagesRequest(getSearch());
+
+  doFetch = async () => {
+    const { hits, page } = await makePromiseWithLoader(imagesRequest);
+    fillGallery(hits);
+
+    const card = document.querySelector('.card');
+    const vals = card.getBoundingClientRect();
+    if (page - 1 > 1) window.scrollBy({ top: vals.height * 2, behavior: 'smooth' });
+
+  }
+  await makePromiseWithLoader(doFetch);
+
+  loadBtn.addEventListener('click', doFetch);
+  
   clearSearch();
+  
+}
+
+const getSearch = () => {
+  return input.value.trim().split(' ').join('+');
 }
 
 form.addEventListener('submit', (event) => {
@@ -48,18 +50,9 @@ form.addEventListener('submit', (event) => {
 })
 
 
-const clearGallery = () => {
-  const galleryList = document.querySelector('.gallery-list');
-  galleryList.innerHTML = '';
-}
-
-const clearSearch = () => {
-  input.value = '';
-}
 
 const fillGallery = (itemsList) => {
   const galleryList = document.querySelector('.gallery-list');
-  clearGallery();
   let content = '';
 
   content = itemsList.reduce((content, item) => {
@@ -90,8 +83,70 @@ const fillGallery = (itemsList) => {
         `
   }, '');
 
-  galleryList.innerHTML = content;
+  galleryList.insertAdjacentHTML('beforeend',content);
   gallery.refresh();
+}
+
+
+const createImagesRequest = (q) => {
+  let page = 1;
+  const per_page = 40; //40
+  let isLastPage = false;
+
+  return async () => {
+    try {
+      if (isLastPage) return [];
+      const { hits, total } = await getImages({ q, page, per_page });
+      
+      if (total === 0) {
+        hideLoadBtn();
+        showError('Sorry, there are no images matching your search query. Please try again!');
+      }
+      else if (page >= Math.ceil(total / per_page)) {
+        isLastPage = true;
+        hideLoadBtn();
+        showMessage('We\'re sorry, but you\'ve reached the end of search results.');
+      }
+      else {
+        showLoadBtn();
+      }
+
+      page += 1;
+      
+      return { hits, page } ;
+
+    }
+    catch (error) {
+      showError('Error! No connection with server!');
+      return []; 
+    }
+  }
+
+}
+
+
+
+const makePromiseWithLoader = async(promise) => {
+  showLoader();
+  const resp = await promise();
+  hideLoader();
+  return resp;
+}
+
+const showLoadBtn = () => {
+  loadBtn.style.display = 'flex';
+}
+const hideLoadBtn = () => {
+  loadBtn.style.display = 'none';
+}
+
+const clearGallery = () => {
+  const galleryList = document.querySelector('.gallery-list');
+  galleryList.innerHTML = '';
+}
+
+const clearSearch = () => {
+  input.value = '';
 }
 
 const hideLoader = () => {
