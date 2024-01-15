@@ -6,7 +6,7 @@ const instance = axios.create({
      "Content-Type": "application/json",
   },
   params: {
-      key: '41582613-5fd86df2fe5af6dc3c1a0bcd8',
+    key: '41582613-5fd86df2fe5af6dc3c1a0bcd8',
     type: 'photo',
     orientation: 'horizontal',
     safesearch: 'true',
@@ -16,5 +16,14 @@ const instance = axios.create({
 const getAxiosData = (res) => res.data;
 
 export const getImages = async (params) => {
-  return getAxiosData(await instance.get('', { params: params }));
+  try {
+    const resp = await instance.get('', { params: params });
+    return getAxiosData(resp);
+  }
+  catch (error) {
+    console.log(error.message);
+    // return;
+  }
+
+  
 }

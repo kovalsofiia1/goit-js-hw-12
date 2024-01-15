@@ -9,41 +9,57 @@ const input = document.querySelector('.search-input');
 const loader = document.querySelector('.loader-div');
 const loadBtn = document.querySelector('.load-button');
 
-
-
+let page = 1;
 let doFetch = null;
+let hits = [];
+let query = '';
 
 const handleSearch = async () => {
   if (doFetch !== null) {
-    loadBtn.removeEventListener('click', doFetch);
+    loadBtn.removeEventListener('click', doFetch); // видалення попередньої пагінації при новому пошуку
     doFetch = null;
   }
 
   hideLoadBtn();
   clearGallery();
-  const s = getSearch();
-  if (!s) {
+
+  query = getSearch();
+  if (!query) {
     showMessage('Input your request!');
     return;
   };
-  // console.log(s);
-  const imagesRequest = createImagesRequest(getSearch());
 
-  doFetch = async () => {
-    const { hits, page } = await makePromiseWithLoader(imagesRequest);
-    fillGallery(hits);
+  const imagesRequest = createImagesRequest(query); //екземпляр функції через замикання
 
-    const card = document.querySelector('.card');
-    const vals = card.getBoundingClientRect();
-    if (page - 1 > 1) window.scrollBy({ top: vals.height * 2, behavior: 'smooth' });
-
+  doFetch = async () => { // завантаження наступгої сторінки: стягує зображення через imagesRequest, відмальовує і прогортує
+    try {
+      hits = await makePromiseWithLoader(imagesRequest);
+      fillGallery(hits);
+      scrollPage();
+    }
+    catch (error) {
+      console.log(error.message);
+    }
   }
-  await makePromiseWithLoader(doFetch);
 
-  loadBtn.addEventListener('click', doFetch);
+  try {
+    await makePromiseWithLoader(doFetch); // відображає перші стягнуті зображення 
+  }
+  catch (error) {
+    console.log(error.message);
+  }
+
+  loadBtn.addEventListener('click', doFetch); //додає doFetch до Load more
   
   clearSearch();
   
+}
+
+const scrollPage = () => {
+  const card = document.querySelector('.card');
+  const vals = card.getBoundingClientRect();
+  if (page - 1 > 1) window.scrollBy({ top: vals.height * 2, behavior: 'smooth' });
+
 }
 
 const getSearch = () => {
@@ -93,10 +109,9 @@ const fillGallery = (itemsList) => {
   gallery.refresh();
 }
 
-
 const createImagesRequest = (q) => {
-  let page = 1;
-  const per_page = 40; //40
+  page = 1;
+  const per_page = 40;
   let isLastPage = false;
 
   return async () => {
@@ -119,12 +134,11 @@ const createImagesRequest = (q) => {
 
       page += 1;
       
-      return { hits, page } ;
+      return hits ;
 
     }
     catch (error) {
       showError('Error! No connection with server!');
-      return []; 
     }
   }
 
@@ -134,9 +148,16 @@ const createImagesRequest = (q) => {
 
 const makePromiseWithLoader = async(promise) => {
   showLoader();
-  const resp = await promise();
-  hideLoader();
-  return resp;
+  try {
+    const resp = await promise();
+    return resp;
+  }
+  catch (error) {
+    console.log(error.message);
+  }
+  finally {
+    hideLoader();
+  }
 }
 
 const showLoadBtn = () => {
